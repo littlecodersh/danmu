@@ -67,10 +67,10 @@ class AbstractDanMuClient(object):
                 if self.danmuWaitTime != -1 and self.danmuWaitTime < time.time():
                     raise Exception('No danmu received in %ss'%self.maxNoDanMuWait)
                 danmuThreadFn(self)
-        self.heartThread = threading.Thread(target = heart_beat, args = (self,), daemon  = True)
-        # self.heartThread.setDaemon(True)
-        self.danmuThread = threading.Thread(target = get_danmu, args = (self,), daemon  = True)
-        # self.danmuThread.setDaemon(True)
+        self.heartThread = threading.Thread(target = heart_beat, args = (self,))
+        self.heartThread.setDaemon(True)
+        self.danmuThread = threading.Thread(target = get_danmu, args = (self,))
+        self.danmuThread.setDaemon(True)
     def _start_receive(self):
         self.live = True
         self.danmuThread.start()

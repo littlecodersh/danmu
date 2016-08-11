@@ -32,7 +32,10 @@ class AbstractDanMuClient(object):
                 danmuThreadFn, heartThreadFn = self._create_thread_fn(roomInfo)
                 self._wrap_thread(danmuThreadFn, heartThreadFn)
                 self._start_receive()
-            except Exception, e:
+            except Exception as e:
+                #debug
+                import traceback
+                traceback.print_exc()
                 logger.debug(str(e.args))
                 time.sleep(5)
             else:
@@ -42,7 +45,10 @@ class AbstractDanMuClient(object):
         def __socket_timeout(*args, **kwargs):
             try:
                 fn(*args, **kwargs)
-            except Exception, e:
+            except Exception as e:
+                #debug
+                import traceback
+                traceback.print_exc()
                 logger.debug(str(e.args))
                 if not self.live: return
                 self.live = False
@@ -61,7 +67,7 @@ class AbstractDanMuClient(object):
         def get_danmu(self):
             while self.live and not self.deprecated:
                 if self.danmuWaitTime != -1 and self.danmuWaitTime < time.time():
-                    raise Exception, 'No danmu received in %ss'%self.maxNoDanMuWait
+                    raise Exception('No danmu received in %ss'%self.maxNoDanMuWait)
                 danmuThreadFn(self)
         self.heartThread = threading.Thread(target = heart_beat, args = (self,))
         self.heartThread.setDaemon(True)

@@ -1,31 +1,28 @@
 import socket, json, re, select, time
+from struct import pack
 
 import requests
 
-from Abstract import AbstractDanMuClient
+from .Abstract import AbstractDanMuClient
 
 class _socket(socket.socket):
     def communicate(self, data):
         self.push(data)
         return self.pull()
     def push(self, data):
-        s = ''
-        length = 9 + len(data)
-        for i in range(4):
-            s += chr(length / 256 ** i % 256 ** (i + 1))
-        s += s
-        s += '\xb1\x02\x00\x00' # 689
-        s += data + '\x00'
+        s = pack('i', 9 + len(data)) * 2
+        s += b'\xb1\x02\x00\x00' # 689
+        s += data.encode('ascii') + b'\x00'
         self.sendall(s)
     def pull(self):
         try: # for socket.settimeout
             return self.recv(9999)
-        except Exception, e:
+        except Exception as e:
             return ''
 
 class DouYuDanMuClient(AbstractDanMuClient):
     def _prepare_env(self):
-        content = requests.get(self.url).content
+        content = requests.get(self.url).text
         roomInfo = json.loads(re.search('\$ROOM = ({[\s\S]*?});', content).group(1))
         return ('openbarrage.douyutv.com', 8601), ('0.0.0.0', 80), roomInfo
     def _init_socket(self, danmu, heart, roomInfo):
@@ -42,10 +39,10 @@ class DouYuDanMuClient(AbstractDanMuClient):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
             try:
-                sender = [m.decode('utf8', 'ignore') for m in re.findall('/nn@=(.*?)/', content)]
-                s = [m.decode('utf8', 'ignore') for m in re.findall('/txt@=(.*?)/', content)]
-            except Exception, e:
-                pass
+                sender = [m.decode('utf8', 'ignore') for m in re.findall(b'/nn@=(.*?)/', content)]
+                s = [m.decode('utf8', 'ignore') for m in re.findall(b'/txt@=(.*?)/', content)]
+            except Exception as e:
+                raise e
             else:
                 self.danmuWaitTime = time.time() + self.maxNoDanMuWait
                 for m in zip(sender, s): self.msgPipe.append(m)
@@ -65,4 +62,4 @@ if __name__ == '__main__':
             else:
                 time.sleep(.1)
     except:
-        print len(dc.msgPipe)
+        print(len(dc.msgPipe))

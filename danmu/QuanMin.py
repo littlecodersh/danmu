@@ -1,8 +1,9 @@
 import time, socket, select, sys, re
+from struct import pack, unpack
 
 import requests
 
-from Abstract import AbstractDanMuClient
+from .Abstract import AbstractDanMuClient
 
 class _socket(socket.socket):
     def communicate(self, data):
@@ -20,10 +21,7 @@ class QuanMinDanMuClient(AbstractDanMuClient):
     def _prepare_env(self):
         r = requests.get('http://www.quanmin.tv/site/route?time='
                 + str(int(time.time()))).content
-        danmuIp = ''
-        for i in range(4):
-            danmuIp += str(ord(r[3 + 4*i])^172) + '.' # I tried many times and get 172
-        danmuIp = danmuIp[:-1]
+        danmuIp = '.'.join([str(i ^ 172) for i in unpack('>iiii', r[:16])])
         roomId = self.url.split('/')[-1]
         if roomId.isdigit():
             roomInfo = {'uid': int(roomId), }
@@ -43,7 +41,7 @@ class QuanMinDanMuClient(AbstractDanMuClient):
             '   "timestamp" : 78,\n'
             '   "ver" : 147\n}')%roomId
         # \x5e may have some problem
-        data = '\x00\x00\x00\x5e' + data + '\x0a'
+        data = pack('>i', len(data)) + data.encode('ascii') + b'\x0a'
         self.danmuSocket.connect(danmu)
         self.danmuSocket.push(data)
     def _create_thread_fn(self, roomInfo):
@@ -51,9 +49,9 @@ class QuanMinDanMuClient(AbstractDanMuClient):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
             try:
-                sender = [m.decode('unicode-escape').decode('unicode-escape') for m in re.findall('\\\\"nick\\\\":\\\\"(.*?)\\\\",\\\\"', content)]
-                msg = [m.decode('unicode-escape').decode('unicode-escape') for m in re.findall('\\\\"text\\\\":\\\\"(.*?)\\\\",\\\\"', content)]
-            except Exception, e:
+                sender = [m.decode('unicode-escape').encode('ascii').decode('unicode-escape') for m in re.findall(b'\\\\"nick\\\\":\\\\"(.*?)\\\\",\\\\"', content)]
+                msg = [m.decode('unicode-escape').encode('ascii').decode('unicode-escape') for m in re.findall(b'\\\\"text\\\\":\\\\"(.*?)\\\\",\\\\"', content)]
+            except Exception as e:
                 pass
             else:
                 self.danmuWaitTime = time.time() + self.maxNoDanMuWait
@@ -76,4 +74,4 @@ if __name__ == '__main__':
             else:
                 time.sleep(.1)
     except:
-        print len(dc.msgPipe)
+        print(len(dc.msgPipe))

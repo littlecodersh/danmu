@@ -1,9 +1,9 @@
 import re
 
-from DouYu import DouYuDanMuClient
-from Panda import PandaDanMuClient
-from ZhanQi import ZhanQiDanMuClient
-from QuanMin import QuanMinDanMuClient
+from .DouYu import DouYuDanMuClient
+from .Panda import PandaDanMuClient
+from .ZhanQi import ZhanQiDanMuClient
+from .QuanMin import QuanMinDanMuClient
 
 __version__ = '1.0.0'
 __all__     = ['DanMuClient']

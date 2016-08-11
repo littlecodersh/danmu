@@ -2,7 +2,7 @@ import time
 
 from danmu import DanMuClient
 
-dc = DanMuClient('http://www.douyu.com/600878')
+dc = DanMuClient('http://www.zhanqi.tv/huatuo')
 dc.start()
 while 1:
     if dc.msgPipe:

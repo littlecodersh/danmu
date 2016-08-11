@@ -1,9 +1,10 @@
 import time, sys, re
 import socket, select
+from struct import pack
 
 import requests
 
-from Abstract import AbstractDanMuClient
+from .Abstract import AbstractDanMuClient
 
 class _socket(socket.socket):
     def communicate(self, data):
@@ -42,8 +43,8 @@ class PandaDanMuClient(AbstractDanMuClient):
             ('sign', roomInfo['sign']),
             ('authtype', roomInfo['authType']) ]
         data = '\n'.join('%s:%s'%(k, v) for k, v in data)
-        data = ('\x00\x06\x00\x02\x00' + chr(len(data)) +
-            bytes(data.encode('utf8') + '\x00\x06\x00\x00'))
+        data = (b'\x00\x06\x00\x02\x00' + pack('B', len(data)) +
+            data.encode('utf8') + b'\x00\x06\x00\x00')
         self.danmuSocket = _socket(socket.AF_INET, socket.SOCK_STREAM)
         self.danmuSocket.settimeout(3)
         self.danmuSocket.connect(danmu)
@@ -53,15 +54,15 @@ class PandaDanMuClient(AbstractDanMuClient):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
             try:
-                sender = [m.decode('utf8', 'ignore').decode('unicode-escape') for m in re.findall('"nickName":"(.*?)","', content)]
-                msg = [m.decode('utf8', 'ignore').decode('unicode-escape') for m in re.findall('"content":"(.*?)"}}', content)]
+                sender = [m.decode('utf8', 'ignore') for m in re.findall(b'"nickName":"(.*?)","', content)]
+                msg = [m.decode('utf8', 'ignore') for m in re.findall(b'"content":"(.*?)"}}', content)]
             except:
                 pass
             else:
                 self.danmuWaitTime = time.time() + self.maxNoDanMuWait
                 for m in zip(sender, msg): self.msgPipe.append(m)
         def heart_beat(self):
-            self.danmuSocket.push('\x00\x06\x00\x06')
+            self.danmuSocket.push(b'\x00\x06\x00\x06')
             time.sleep(60)
         return get_danmu, heart_beat
 
@@ -79,4 +80,4 @@ if __name__ == '__main__':
             else:
                 time.sleep(.1)
     except:
-        print len(dc.msgPipe)
+        print(len(dc.msgPipe))

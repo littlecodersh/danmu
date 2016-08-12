@@ -24,8 +24,8 @@ class DouYuDanMuClient(AbstractDanMuClient):
     def _prepare_env(self):
         content = requests.get(self.url).text
         roomInfo = json.loads(re.search('\$ROOM = ({[\s\S]*?});', content).group(1))
-        return ('openbarrage.douyutv.com', 8601), ('0.0.0.0', 80), roomInfo
-    def _init_socket(self, danmu, heart, roomInfo):
+        return ('openbarrage.douyutv.com', 8601), roomInfo
+    def _init_socket(self, danmu, roomInfo):
         self.danmuSocket = _socket()
         self.danmuSocket.connect(danmu)
         self.danmuSocket.settimeout(3)

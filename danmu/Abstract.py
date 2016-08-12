@@ -17,18 +17,17 @@ class AbstractDanMuClient(object):
         self.maxNoDanMuWait = maxNoDanMuWait
         self.deprecated = False # this is an outer live flag
         self.live = False # this is an inner live flag
-        self.danmuSocket, self.heartSocket = None, None
+        self.danmuSocket = None
         self.danmuThread, self.heartThread = None, None
         self.msgPipe = []
         self.danmuWaitTime = -1
     def start(self):
         while not self.deprecated:
             try:
-                danmuSocketInfo, heartSocketInfo, roomInfo = self._prepare_env()
+                danmuSocketInfo, roomInfo = self._prepare_env()
                 if self.danmuSocket: self.danmuSocket.close()
-                if self.heartSocket: self.heartSocket.close()
                 self.danmuWaitTime = -1
-                self._init_socket(danmuSocketInfo, heartSocketInfo, roomInfo)
+                self._init_socket(danmuSocketInfo, roomInfo)
                 danmuThreadFn, heartThreadFn = self._create_thread_fn(roomInfo)
                 self._wrap_thread(danmuThreadFn, heartThreadFn)
                 self._start_receive()
@@ -79,16 +78,15 @@ class AbstractDanMuClient(object):
         self.heartThread.start()
         self.danmuWaitTime = time.time() + 20
     def thread_alive(self):
-        if ((self.danmuThread or self.heartThread) is None or
-                not (self.danmuThread.isAlive() or self.heartThread.isAlive())):
+        if self.danmuSocket is None or not self.danmuThread.isAlive():
             return False
         else:
             return True
     @abc.abstractmethod
     def _prepare_env(self):
-        return ('0.0.0.0', 80), ('0.0.0.0', 80), {} # danmu, heart, roomInfo
+        return ('0.0.0.0', 80), {} # danmu, roomInfo
     @abc.abstractmethod
-    def _init_socket(self, danmu, heart, roomInfo):
+    def _init_socket(self, danmu, roomInfo):
         pass
     # method shouldn't include the main while loop
     # danmu method should reload self.danmuWaitTime

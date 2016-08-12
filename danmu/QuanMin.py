@@ -29,8 +29,8 @@ class QuanMinDanMuClient(AbstractDanMuClient):
             url = '%s/%s/info.json?t=%s'%('http://www.quanmin.tv/json/rooms', 
                 roomId, int(time.time() / 50))
             roomInfo = requests.get(url).json()
-        return (danmuIp, 9098), ('0.0.0.0', 80), roomInfo # danmu, heart, roomInfo, success
-    def _init_socket(self, danmu, heart, roomInfo):
+        return (danmuIp, 9098), roomInfo # danmu, roomInfo, success
+    def _init_socket(self, danmu, roomInfo):
         self.danmuSocket = _socket()
         self.danmuSocket.settimeout(3)
         roomId = roomInfo['uid']

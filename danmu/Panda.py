@@ -33,8 +33,8 @@ class PandaDanMuClient(AbstractDanMuClient):
             '_': int(time.time()), }
         serverInfo = requests.get(url, params).json()['data']
         serverAddress = serverInfo['chat_addr_list'][0].split(':')
-        return (serverAddress[0], int(serverAddress[1])), ('0.0.0.0', 80), serverInfo
-    def _init_socket(self, danmu, heart, roomInfo):
+        return (serverAddress[0], int(serverAddress[1])), serverInfo
+    def _init_socket(self, danmu, roomInfo):
         data = [
             ('u', '%s@%s'%(roomInfo['rid'], roomInfo['appid'])),
             ('k', 1),

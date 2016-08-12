@@ -25,8 +25,8 @@ class ZhanQiDanMuClient(AbstractDanMuClient):
             '_t': int(time.time() / 60), }
         roomInfo = requests.get(url, params).json()
         roomInfo['id'] = roomId
-        return serverAddress, ('0.0.0.0', 80), roomInfo # danmu, heart, roomInfo, success
-    def _init_socket(self, danmu, heart, roomInfo):
+        return serverAddress, roomInfo # danmu, roomInfo, success
+    def _init_socket(self, danmu, roomInfo):
         self.danmuSocket = socket.socket()
         self.danmuSocket.settimeout(3)
         data = {

@@ -38,28 +38,18 @@ class DouYuDanMuClient(AbstractDanMuClient):
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
-            try:
-                sender = [m.decode('utf8', 'ignore') for m in re.findall(b'/nn@=(.*?)/', content)]
-                s = [m.decode('utf8', 'ignore') for m in re.findall(b'/txt@=(.*?)/', content)]
-            except Exception as e:
-                raise e
-            else:
-                self.danmuWaitTime = time.time() + self.maxNoDanMuWait
-                for m in zip(sender, s): self.msgPipe.append(m)
+            for msg in re.findall(b'(type@=.*?)\x00', content):
+                try:
+                    msg = msg.replace(b'@=', b'":"').replace(b'/', b'","')
+                    msg = msg.replace(b'@A', b'@').replace(b'@S', b'/')
+                    msg = json.loads((b'{"' + msg[:-2] + b'}').decode('utf8', 'ignore'))
+                    msg['NickName'] = msg.get('nn', '')
+                    msg['Content']  = msg.get('txt', '')
+                    msg['MsgType']  = {'dgb': 'gift', 'chatmsg': 'danmu',
+                        'uenter': 'enter'}.get(msg['type'], 'other')
+                except Exception as e:
+                    pass
+                else:
+                    self.danmuWaitTime = time.time() + self.maxNoDanMuWait
+                    self.msgPipe.append(msg)
         return get_danmu, keep_alive # danmu, heart
-
-if __name__ == '__main__':
-    dc = DouYuDanMuClient('http://www.douyu.com/426530')
-    dc.start()
-    print('Begin')
-    def default_time_format(timeGap = 0):
-        return time.strftime('%y%m%d-%H%M%S', time.localtime(time.time() + timeGap))
-    try:
-        while 1:
-            if dc.msgPipe:
-                with open('danmu.log', 'ab') as f: f.write((default_time_format()
-                    + ' - ' + '[%s]: %s\n'%dc.msgPipe.pop()).encode('utf8'))
-            else:
-                time.sleep(.1)
-    except:
-        print(len(dc.msgPipe))

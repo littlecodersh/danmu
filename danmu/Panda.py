@@ -1,4 +1,4 @@
-import time, sys, re
+import time, sys, re, json
 import socket, select
 from struct import pack
 
@@ -53,31 +53,20 @@ class PandaDanMuClient(AbstractDanMuClient):
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
-            try:
-                sender = [m.decode('utf8', 'ignore') for m in re.findall(b'"nickName":"(.*?)","', content)]
-                msg = [m.decode('utf8', 'ignore') for m in re.findall(b'"content":"(.*?)"}}', content)]
-            except:
-                pass
-            else:
-                self.danmuWaitTime = time.time() + self.maxNoDanMuWait
-                for m in zip(sender, msg): self.msgPipe.append(m)
+            for msg in re.findall(b'({"type":.*?}})', content):
+                try:
+                    msg = json.loads(msg.decode('utf8', 'ignore'))
+                    msg['NickName'] = msg.get('data', {}).get('from', {}
+                        ).get('nickName', '')
+                    msg['Content']  = msg.get('data', {}).get('content', '')
+                    msg['MsgType']  = {'1': 'danmu', '206': 'gift'
+                        }.get(msg['type'], 'other')
+                except:
+                    pass
+                else:
+                    self.danmuWaitTime = time.time() + self.maxNoDanMuWait
+                    self.msgPipe.append(msg)
         def heart_beat(self):
             self.danmuSocket.push(b'\x00\x06\x00\x06')
             time.sleep(60)
         return get_danmu, heart_beat
-
-if __name__ == '__main__':
-    dc = PandaDanMuClient('http://www.panda.tv/88911')
-    dc.start()
-    print('Loaded')
-    def default_time_format(timeGap = 0):
-        return time.strftime('%y%m%d-%H%M%S', time.localtime(time.time() + timeGap))
-    try:
-        while 1:
-            if dc.msgPipe:
-                with open('danmu.log', 'ab') as f: f.write((default_time_format()
-                    + ' - ' + '[%s]: %s\n'%dc.msgPipe.pop()).encode('utf8'))
-            else:
-                time.sleep(.1)
-    except:
-        print(len(dc.msgPipe))

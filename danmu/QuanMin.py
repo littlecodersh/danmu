@@ -1,4 +1,4 @@
-import time, socket, select, sys, re
+import time, socket, select, sys, re, json
 from struct import pack, unpack
 
 import requests
@@ -40,7 +40,6 @@ class QuanMinDanMuClient(AbstractDanMuClient):
             '   "rid" : "%s",\n'
             '   "timestamp" : 78,\n'
             '   "ver" : 147\n}')%roomId
-        # \x5e may have some problem
         data = pack('>i', len(data)) + data.encode('ascii') + b'\x0a'
         self.danmuSocket.connect(danmu)
         self.danmuSocket.push(data)
@@ -48,30 +47,22 @@ class QuanMinDanMuClient(AbstractDanMuClient):
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
-            try:
-                sender = [m.decode('unicode-escape').encode('ascii').decode('unicode-escape') for m in re.findall(b'\\\\"nick\\\\":\\\\"(.*?)\\\\",\\\\"', content)]
-                msg = [m.decode('unicode-escape').encode('ascii').decode('unicode-escape') for m in re.findall(b'\\\\"text\\\\":\\\\"(.*?)\\\\",\\\\"', content)]
-            except Exception as e:
-                pass
-            else:
-                self.danmuWaitTime = time.time() + self.maxNoDanMuWait
-                for m in zip(sender, msg): self.msgPipe.append(m)
+            for msg in re.findall(b'\x00\x00.*?({[^\x00]*)', content):
+                try:
+                    msg = json.loads(json.loads(msg.decode('ascii'))['chat']['json'])
+                    msg['NickName'] = msg.get('user', {}).get('nick', '')
+                    msg['Content']  = msg.get('text', '')
+                    if msg.get('type') in (1,2,3,4,5):
+                        msg['MsgType'] = 'gift'
+                    elif msg.get('type') == 0:
+                        msg['MsgType'] = 'danmu'
+                    else:
+                        msg['MsgType'] = 'other'
+                except Exception as e:
+                    pass
+                else:
+                    self.danmuWaitTime = time.time() + self.maxNoDanMuWait
+                    self.msgPipe.append(msg)
         def heart_beat(self):
             time.sleep(3)
         return get_danmu, heart_beat # danmu, heart
-
-if __name__ == '__main__':
-    dc = QuanMinDanMuClient('http://www.quanmin.tv/star/1113774')
-    dc.start()
-    print('Loaded')
-    def default_time_format(timeGap = 0):
-        return time.strftime('%y%m%d-%H%M%S', time.localtime(time.time() + timeGap))
-    try:
-        while 1:
-            if dc.msgPipe:
-                with open('danmu.log', 'ab') as f: f.write((default_time_format()
-                    + ' - ' + '[%s]: %s\n'%dc.msgPipe.pop()).encode('utf8'))
-            else:
-                time.sleep(.1)
-    except:
-        print(len(dc.msgPipe))

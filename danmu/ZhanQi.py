@@ -53,31 +53,24 @@ class ZhanQiDanMuClient(AbstractDanMuClient):
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.recv(999)
-            try:
-                sender = [m.decode('utf8', 'ignore') for m in re.findall(b'"fromname":"(.*?)"', content)]
-                s = [m.decode('utf8', 'ignore') for m in re.findall(b'"content":"(.*?)"', content)]
-            except Exception as e:
-                pass
-            else:
-                self.danmuWaitTime = time.time() + self.maxNoDanMuWait
-                for m in zip(sender, s): self.msgPipe.append(m)
+            for msg in re.findall(b'\x10\x27({[^\x00]*})\x0a', content):
+                try:
+                    msg = json.loads(msg.decode('utf8', 'ignore'))
+                    msg['NickName'] = (msg.get('fromname', '') or
+                        msg.get('data', {}).get('nickname', ''))
+                    msg['Content']  = msg.get('content', '')
+                    if 'chatm' in msg.get('cmdid', ''):
+                        msg['MsgType'] = 'danmu'
+                    elif 'Gift' in msg.get('cmdid', ''):
+                        msg['MsgType'] = 'gift'
+                    else:
+                        msg['MsgType'] = 'other'
+                except Exception as e:
+                    pass
+                else:
+                    self.danmuWaitTime = time.time() + self.maxNoDanMuWait
+                    self.msgPipe.append(msg)
         def heart_beat(self):
             time.sleep(3)
             self.danmuSocket.sendall(b'\xbb\xcc' + b'\x00'*8 + b'\x59\x27')
         return get_danmu, heart_beat # danmu, heart
-
-if __name__ == '__main__':
-    dc = ZhanQiDanMuClient('http://www.zhanqi.tv/9527')
-    dc.start()
-    print('Begin')
-    def default_time_format(timeGap = 0):
-        return time.strftime('%y%m%d-%H%M%S', time.localtime(time.time() + timeGap))
-    try:
-        while 1:
-            if dc.msgPipe:
-                with open('danmu.log', 'ab') as f: f.write((default_time_format()
-                    + ' - ' + '[%s]: %s\n'%dc.msgPipe.pop()).encode('utf8'))
-            else:
-                time.sleep(.1)
-    except:
-        print(len(dc.msgPipe))

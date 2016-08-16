@@ -32,9 +32,6 @@ class AbstractDanMuClient(object):
                 self._wrap_thread(danmuThreadFn, heartThreadFn)
                 self._start_receive()
             except Exception as e:
-                #debug
-                import traceback
-                traceback.print_exc()
                 logger.debug(str(e.args))
                 time.sleep(5)
             else:
@@ -45,9 +42,6 @@ class AbstractDanMuClient(object):
             try:
                 fn(*args, **kwargs)
             except Exception as e:
-                #debug
-                import traceback
-                traceback.print_exc()
                 logger.debug(str(e.args))
                 if not self.live: return
                 self.live = False

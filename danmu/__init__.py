@@ -26,7 +26,13 @@ class DanMuClient(object):
             if re.match('.*?%s/*.*?/[^/]*?$' % u, url):
                 self.__baseClient = bc; break
     def __register(self, fn, msgType):
-        self.__functionDict[msgType] = fn
+        if fn is None
+            if msgType == 'default':
+                self.__functionDict['default'] = lambda x: 0
+            elif self.__functionDict.get(msgType):
+                del self.__functionDict[msgType]
+        else:
+            self.__functionDict[msgType] = fn
     def default(self, fn):
         self.__register(fn, 'default')
         return fn

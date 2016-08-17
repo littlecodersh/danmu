@@ -101,7 +101,7 @@ A: 消息为一个字典，必有三个键：NickName、Content、MsgType，对�
 [py2]: https://img.shields.io/badge/python-2.7-ff69b4.svg "python2"
 [py3]: https://img.shields.io/badge/python-3.5-red.svg "python3"
 [english_version]: https://github.com/littlecodersh/danmu/blob/master/README_EN.md
-[document]: http://danmu.readthedocs.io/zh_CN/latest/
+[document]: https://danmu.readthedocs.org/zh/latest/
 [issue#2]: https://github.com/littlecodersh/danmu/issues/2
 [gitter_picture]: https://badges.gitter.im/littlecodersh/danmu.svg "gitter"
 [gitter]: https://gitter.im/littlecodersh/danmu?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge

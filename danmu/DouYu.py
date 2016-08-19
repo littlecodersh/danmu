@@ -21,10 +21,15 @@ class _socket(socket.socket):
             return ''
 
 class DouYuDanMuClient(AbstractDanMuClient):
+    def _get_live_status(self):
+        url = 'http://open.douyucdn.cn/api/RoomApi/room/%s' % (
+            self.url.split('/')[-1] or self.url.split('/')[-2])
+        j = requests.get(url).json()
+        if j.get('error') != 0 or j['data'].get('room_status') != '1': return False
+        self.roomId = j['data']['room_id']
+        return True
     def _prepare_env(self):
-        content = requests.get(self.url).text
-        roomInfo = json.loads(re.search('\$ROOM = ({[\s\S]*?});', content).group(1))
-        return ('openbarrage.douyutv.com', 8601), roomInfo
+        return ('openbarrage.douyutv.com', 8601), {'room_id': self.roomId}
     def _init_socket(self, danmu, roomInfo):
         self.danmuSocket = _socket()
         self.danmuSocket.connect(danmu)

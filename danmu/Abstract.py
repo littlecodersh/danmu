@@ -12,9 +12,10 @@ logger = logging.getLogger('danmu')
 class AbstractDanMuClient(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, url, maxNoDanMuWait = 180):
+    def __init__(self, url, maxNoDanMuWait = 180, anchorStatusRescanTime = 30):
         self.url = url
         self.maxNoDanMuWait = maxNoDanMuWait
+        self.anchorStatusRescanTime = anchorStatusRescanTime
         self.deprecated = False # this is an outer live flag
         self.live = False # this is an inner live flag
         self.danmuSocket = None
@@ -24,6 +25,8 @@ class AbstractDanMuClient(object):
     def start(self):
         while not self.deprecated:
             try:
+                while not self._get_live_status():
+                    time.sleep(self.anchorStatusRescanTime)
                 danmuSocketInfo, roomInfo = self._prepare_env()
                 if self.danmuSocket: self.danmuSocket.close()
                 self.danmuWaitTime = -1
@@ -32,6 +35,8 @@ class AbstractDanMuClient(object):
                 self._wrap_thread(danmuThreadFn, heartThreadFn)
                 self._start_receive()
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 logger.debug(str(e.args))
                 time.sleep(5)
             else:
@@ -76,6 +81,9 @@ class AbstractDanMuClient(object):
             return False
         else:
             return True
+    @abc.abstractmethod
+    def _get_live_status(self):
+        return False # return whether anchor is on live
     @abc.abstractmethod
     def _prepare_env(self):
         return ('0.0.0.0', 80), {} # danmu, roomInfo

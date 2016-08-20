@@ -19,8 +19,16 @@ class _socket(socket.socket):
             return ''
 
 class PandaDanMuClient(AbstractDanMuClient):
+    def _get_live_status(self):
+        params = {
+            'roomid': (self.url.split('/')[-1] or
+                self.url.split('/')[-2]),
+            'pub_key': '',
+            '_': int(time.time()), }
+        j = requests.get('http://www.panda.tv/api_room', params).json()['data']
+        return j['videoinfo']['status'] == '2'
     def _prepare_env(self):
-        roomId = self.url.split('/')[-1]
+        roomId = self.url.split('/')[-1] or self.url.split('/')[-2]
         url = 'http://www.panda.tv/ajax_chatroom?roomid=%s&_=%s'%(roomId, str(int(time.time())))
         roomInfo = requests.get(url).json()
         url = 'http://api.homer.panda.tv/chatroom/getinfo'

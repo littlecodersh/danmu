@@ -18,11 +18,15 @@ class _socket(socket.socket):
             return ''
 
 class QuanMinDanMuClient(AbstractDanMuClient):
+    def _get_live_status(self):
+        url = '%s/%s/info.json?t=%s' % ('http://www.quanmin.tv/json/rooms',
+            self.url.split('/')[-1] or self.url.split('/')[-2], int(time.time() / 50))
+        return requests.get(url).json()['play_status']
     def _prepare_env(self):
         r = requests.get('http://www.quanmin.tv/site/route?time='
                 + str(int(time.time()))).content
         danmuIp = '.'.join([str(i ^ 172) for i in unpack('>iiii', r[:16])])
-        roomId = self.url.split('/')[-1]
+        roomId = self.url.split('/')[-1] or self.url.split('/')[-2]
         if roomId.isdigit():
             roomInfo = {'uid': int(roomId), }
         else:

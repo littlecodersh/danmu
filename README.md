@@ -6,6 +6,8 @@ danmu 是一个开源的直播平台弹幕接口，使用他没什么基础的�
 
 使用不到三十行代码，你就可以使用Python基于弹幕进一步开发。
 
+支持斗鱼、熊猫、战旗、全民多平台弹幕。
+
 支持各版本Python，无平台依赖，方便各类开发者、爱好者使用。
 
 一次开启，主播上线自动连接，下线后上线自动重连。
@@ -38,6 +40,7 @@ def pp(msg):
         decode(sys.stdin.encoding))
 
 dmc = DanMuClient('http://www.douyu.com/lslalala')
+if not dmc.isValid(): print('Url not valid')
 
 @dmc.danmu
 def danmu_fn(msg):
@@ -53,6 +56,10 @@ def other_fn(msg):
 
 dmc.start(blockThread = True)
 ```
+
+## Screenshot
+
+![screenshot][screenshot]
 
 ## Advanced uses
 
@@ -102,6 +109,7 @@ A: 消息为一个字典，必有三个键：NickName、Content、MsgType，对�
 [py3]: https://img.shields.io/badge/python-3.5-red.svg "python3"
 [english_version]: https://github.com/littlecodersh/danmu/blob/master/README_EN.md
 [document]: http://danmu.readthedocs.io/zh_CN/latest/
+[screenshot]: http://7xrip4.com1.z0.glb.clouddn.com/danmu/demo.png?imageView/2/w/400/ "screenshot"
 [issue#2]: https://github.com/littlecodersh/danmu/issues/2
 [gitter_picture]: https://badges.gitter.im/littlecodersh/danmu.svg "gitter"
 [gitter]: https://gitter.im/littlecodersh/danmu?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge

@@ -5,7 +5,7 @@ from .Panda import PandaDanMuClient
 from .ZhanQi import ZhanQiDanMuClient
 from .QuanMin import QuanMinDanMuClient
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __all__     = ['DanMuClient']
 
 class DanMuClient(object):
@@ -23,16 +23,18 @@ class DanMuClient(object):
                 'douyu.com'  : DouYuDanMuClient,
                 'quanmin.tv' : QuanMinDanMuClient,
                 'zhanqi.tv'  : ZhanQiDanMuClient, }.items():
-            if re.match('.*?%s/*.*?/[^/]*?$' % u, url):
+            if re.match(r'^(?:http://)?.*?%s/(.+?)$' % u, url):
                 self.__baseClient = bc; break
     def __register(self, fn, msgType):
-        if fn is None
+        if fn is None:
             if msgType == 'default':
                 self.__functionDict['default'] = lambda x: 0
             elif self.__functionDict.get(msgType):
                 del self.__functionDict[msgType]
         else:
             self.__functionDict[msgType] = fn
+    def isValid(self):
+        return self.__baseClient is not None
     def default(self, fn):
         self.__register(fn, 'default')
         return fn

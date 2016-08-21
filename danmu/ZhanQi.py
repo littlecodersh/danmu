@@ -7,25 +7,26 @@ import requests
 from .Abstract import AbstractDanMuClient
 
 class ZhanQiDanMuClient(AbstractDanMuClient):
-    def _prepare_env(self):
-        baseUrl = 'http://www.zhanqi.tv'
-        roomName = self.url.split('/')[-1]
-        r = requests.get('%s/%s'%(baseUrl, roomName))
-        if r.url == baseUrl: raise Exception('Wrong url')
+    def _get_live_status(self):
+        r = requests.get('http://www.zhanqi.tv/' +
+            self.url.split('/')[-1] or self.url.split('/')[-2])
+        if r.url == 'http://www.zhanqi.tv/': return False
         rawJson = re.findall('oRoom = (.*);[\s\S]*?window.bClose', r.text)
         if not rawJson: rawJson = re.findall('aVideos = (.*);[\s\S]*?oPageConfig.oUrl', r.text)
-        roomInfo = json.loads(rawJson[0])
-        if isinstance(roomInfo, list): roomInfo = roomInfo[0]
-        roomId = int(roomInfo['id'])
-        serverAddress = json.loads(base64.b64decode(roomInfo['flashvars']['Servers']).decode('ascii'))['list'][0]
+        self.roomInfo = json.loads(rawJson[0])
+        if isinstance(self.roomInfo, list): self.roomInfo = self.roomInfo[0]
+        return self.roomInfo['status'] == '4'
+    def _prepare_env(self):
+        serverAddress = json.loads(base64.b64decode(
+            self.roomInfo['flashvars']['Servers']).decode('ascii'))['list'][0]
         serverAddress = (serverAddress['ip'], serverAddress['port'])
-        url = '%s/api/public/room.viewer'%baseUrl
+        url = '%s/api/public/room.viewer' % 'http://www.zhanqi.tv'
         params = {
-            'uid': roomInfo['uid'],
+            'uid': self.roomInfo['uid'],
             '_t': int(time.time() / 60), }
         roomInfo = requests.get(url, params).json()
-        roomInfo['id'] = roomId
-        return serverAddress, roomInfo # danmu, roomInfo, success
+        roomInfo['id'] = int(self.roomInfo['id'])
+        return serverAddress, roomInfo # danmu, roomInfo
     def _init_socket(self, danmu, roomInfo):
         self.danmuSocket = socket.socket()
         self.danmuSocket.settimeout(3)

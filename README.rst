@@ -47,6 +47,7 @@ The following is a simple demo of how to use danmu.
             decode(sys.stdin.encoding))
 
     dmc = DanMuClient('http://www.douyu.com/lslalala')
+    if not dmc.isValid(): print('Url not valid')
 
     @dmc.danmu
     def danmu_fn(msg):
@@ -111,6 +112,7 @@ Or through gitter: |gitter|_
 .. |py3| image:: https://img.shields.io/badge/python-3.5-red.svg
 .. _chinese_version: https://github.com/littlecodersh/danmu/blob/master/README.md
 .. _document: https://danmu.readthedocs.org/zh/latest/
+.. |screenshot| image:: http://7xrip4.com1.z0.glb.clouddn.com/danmu/demo.png?imageView/2/w/400/
 .. _issue#2: https://github.com/littlecodersh/danmu/issues/2
 .. |gitter| image:: https://badges.gitter.im/littlecodersh/danmu.svg
 .. _gitter: https://gitter.im/littlecodersh/danmu?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge

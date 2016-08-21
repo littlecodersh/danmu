@@ -7,6 +7,7 @@ def pp(msg):
         decode(sys.stdin.encoding))
 
 dmc = DanMuClient('http://www.douyu.com/lslalala')
+if not dmc.isValid(): print('Url not valid')
 
 @dmc.danmu
 def danmu_fn(msg):
@@ -14,7 +15,7 @@ def danmu_fn(msg):
 
 @dmc.gift
 def gift_fn(msg):
-    pp('[%s] sent a gift!' % content['NickName'])
+    pp('[%s] sent a gift!' % msg['NickName'])
 
 @dmc.other
 def other_fn(msg):

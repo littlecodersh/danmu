@@ -42,6 +42,7 @@ def pp(msg):
         decode(sys.stdin.encoding))
 
 dmc = DanMuClient('http://www.douyu.com/lslalala')
+if not dmc.isValid(): print('Url not valid')
 
 @dmc.danmu
 def danmu_fn(msg):
@@ -57,6 +58,10 @@ def other_fn(msg):
 
 dmc.start(blockThread = True)
 ```
+
+## Screenshot
+
+![screenshot][screenshot]
 
 ## Advanced uses
 
@@ -104,6 +109,7 @@ Or through gitter: [![gitter][gitter_picture]][gitter]
 [py3]: https://img.shields.io/badge/python-3.5-red.svg "python3"
 [chinese_version]: https://github.com/littlecodersh/danmu/blob/master/README.md
 [document]: http://danmu.readthedocs.io/zh_CN/latest/
+[screenshot]: http://7xrip4.com1.z0.glb.clouddn.com/danmu/demo.png?imageView/2/w/400/ "screenshot"
 [issue#2]: https://github.com/littlecodersh/danmu/issues/2
 [gitter_picture]: https://badges.gitter.im/littlecodersh/danmu.svg "gitter"
 [gitter]: https://gitter.im/littlecodersh/danmu?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge

@@ -4,6 +4,7 @@ from .DouYu import DouYuDanMuClient
 from .Panda import PandaDanMuClient
 from .ZhanQi import ZhanQiDanMuClient
 from .QuanMin import QuanMinDanMuClient
+from .Bilibili import BilibiliDanMuClient
 
 __version__ = '1.0.1'
 __all__     = ['DanMuClient']
@@ -19,10 +20,11 @@ class DanMuClient(object):
             self.__url = url
         else:
             self.__url = 'http://' + url
-        for u, bc in {'panda.tv': PandaDanMuClient,
-                'douyu.com'  : DouYuDanMuClient,
-                'quanmin.tv' : QuanMinDanMuClient,
-                'zhanqi.tv'  : ZhanQiDanMuClient, }.items():
+        for u, bc in {'panda.tv'    : PandaDanMuClient,
+                'douyu.com'         : DouYuDanMuClient,
+                'quanmin.tv'        : QuanMinDanMuClient,
+                'zhanqi.tv'         : ZhanQiDanMuClient,
+                'live.bilibili.com' : BilibiliDanMuClient, }.items() :
             if re.match(r'^(?:http://)?.*?%s/(.+?)$' % u, url):
                 self.__baseClient = bc; break
     def __register(self, fn, msgType):

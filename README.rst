@@ -11,6 +11,8 @@ Using this, even without programming basis, you will have an easy access to chat
 
 With less than 30 lines of code, you may develop further with chat messages.
 
+Douyu, panda, Zhanqi, Quanmin, bilibili are all supported.
+
 It supports multi versions of python and platforms, making it available for all developers and amateurs.
 
 Once started, it will auto connect when anchor showed up and re-connect when anchor connect again.

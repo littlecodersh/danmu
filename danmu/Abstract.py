@@ -25,8 +25,11 @@ class AbstractDanMuClient(object):
     def start(self):
         while not self.deprecated:
             try:
-                while not self._get_live_status():
+                while not self.deprecated:
+                    if self._get_live_status(): break
                     time.sleep(self.anchorStatusRescanTime)
+                else:
+                    break
                 danmuSocketInfo, roomInfo = self._prepare_env()
                 if self.danmuSocket: self.danmuSocket.close()
                 self.danmuWaitTime = -1

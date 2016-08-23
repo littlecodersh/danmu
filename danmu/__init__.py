@@ -6,7 +6,7 @@ from .ZhanQi import ZhanQiDanMuClient
 from .QuanMin import QuanMinDanMuClient
 from .Bilibili import BilibiliDanMuClient
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 __all__     = ['DanMuClient']
 
 class DanMuClient(object):
@@ -52,8 +52,10 @@ class DanMuClient(object):
     def start(self, blockThread = False, pauseTime = .1):
         if not self.__baseClient or self.__isRunning: return False
         self.__client = self.__baseClient(self.__url)
-        self.__client.start()
         self.__isRunning = True
+        receiveThread = threading.Thread(target=self.__client.start)
+        receiveThread.setDaemon(True)
+        receiveThread.start()
         def _start():
             while self.__isRunning:
                 if self.__client.msgPipe:

@@ -1,10 +1,11 @@
 import re, threading, time, traceback
 
-from .DouYu import DouYuDanMuClient
-from .Panda import PandaDanMuClient
-from .ZhanQi import ZhanQiDanMuClient
-from .QuanMin import QuanMinDanMuClient
+from .DouYu    import DouYuDanMuClient
+from .Panda    import PandaDanMuClient
+from .ZhanQi   import ZhanQiDanMuClient
+from .QuanMin  import QuanMinDanMuClient
 from .Bilibili import BilibiliDanMuClient
+from .HuoMao   import HuoMaoDanMuClient
 
 __version__ = '1.0.3'
 __all__     = ['DanMuClient']
@@ -24,7 +25,8 @@ class DanMuClient(object):
                 'douyu.com'         : DouYuDanMuClient,
                 'quanmin.tv'        : QuanMinDanMuClient,
                 'zhanqi.tv'         : ZhanQiDanMuClient,
-                'live.bilibili.com' : BilibiliDanMuClient, }.items() :
+                'live.bilibili.com' : BilibiliDanMuClient,
+                'huomao.com'        : HuoMaoDanMuClient, }.items() :
             if re.match(r'^(?:http://)?.*?%s/(.+?)$' % u, url):
                 self.__baseClient = bc; break
     def __register(self, fn, msgType):

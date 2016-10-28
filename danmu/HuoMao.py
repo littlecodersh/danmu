@@ -1,155 +1,116 @@
-import socket, time, re, json, threading
+import socket, time, re, json, threading, select
 from struct import pack
 
 import requests
 
 from .Abstract import AbstractDanMuClient
 
-class BilibiliDanMuClient(AbstractDanMuClient):
+class _socket(socket.socket):
+    def push(self, data, t=b'\x01'):
+        data = t + pack('>I', len(data))[1:] + data
+        self.sendall(data)
+    def pull(self):
+        try: # for socket.settimeout
+            return self.recv(9999)
+        except Exception as e:
+            return ''
+
+class HuoMaoDanMuClient(AbstractDanMuClient):
     def _get_live_status(self):
-        url = ('http://live.bilibili.com/'
-            + self.url.split('/')[-1] or self.url.split('/')[-2])
-        self.roomId = re.findall(b'var ROOMID = (\d+);', requests.get(url).content)[0].decode('ascii')
-        r = requests.get('http://live.bilibili.com/api/player?id=cid:' + self.roomId)
-        self.serverUrl = re.findall(b'<server>(.*?)</server>', r.content)[0].decode('ascii')
-        return re.findall(b'<state>(.*?)</state>', r.content)[0] == b'LIVE'
+        c = requests.get(self.url).content
+        r = re.search('getFlash\("(.*?)","(.*?)"\);', c)
+        data = {
+            'cid': r.group(1),
+            'cdns': '1',
+            'streamtype': 'live',
+            'VideoIDS': r.group(2), }
+        j = requests.post('http://www.huomao.com/swf/live_data', data=data).json()
+        return j['roomStatus'] == '1'
     def _prepare_env(self):
-        return (self.serverUrl, 788), {}
+        c = requests.get(self.url).content
+        r = re.search('getFlash\("(.*?)","(.*?)"\);', c)
+        roomId = r.group(1)
+        url = 'http://chat.huomao.com/chat/getToken'
+        params = {
+            'callback': 'jQuery171032695039477104815_1477741089191',
+            'cid': roomId,
+            '_': int(time.time() * 100), }
+        headers = { 'User-Agent': 'User-Agent: Mozilla/5.0 (Windows NT 6.3; Win64; x64)'\
+            'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36', }
+        c = requests.get(url, params=params, headers=headers).content
+        r = re.search('jQuery[^(]*?\((.*?)\)$', c)
+        j = json.loads(r.group(1))['data']
+
+        s = _socket()
+        s.connect((j['host'], int(j['port'])))
+        data = {
+            'user': None,
+            'sys': {
+                'version': '0.1.6b',
+                'pomelo_version': '0.7.x',
+                'type': 'pomelo-flash-tcp', }, }
+        data = json.dumps(data, separators=(',', ':'))
+        s.push(data)
+        s.pull()
+
+        s.sendall(b'\x02\x00\x00\x00')
+
+        data = {
+            'channelId': roomId,
+            'log': True,
+            'userId': '', }
+        data = '\x00\x01\x20gate.gateHandler.lookupConnector'\
+            + json.dumps(data, separators=(',', ':'))
+        s.push(data, b'\x04')
+        r = s.pull()[6:]
+        danmuPort = json.loads(r)
+
+        return (danmuPort['host'], int(danmuPort['port'])),\
+                {'roomId': roomId, 'token': j['token'], 'userId': j['uid']}
     def _init_socket(self, danmu, roomInfo):
         self.danmuSocket = _socket()
         self.danmuSocket.connect(danmu)
         self.danmuSocket.settimeout(3)
-        self.danmuSocket.push(data = json.dumps({
-            'roomid': int(self.roomId),
-            'uid': int(1e14 + 2e14 * random.random()),
-            }, separators=(',', ':')).encode('ascii'))
+
+        data = {
+            'user': None,
+            'sys': {
+                'version': '0.1.6b',
+                'pomelo_version': '0.7.x',
+                'type': 'pomelo-flash-tcp', }, }
+        data = json.dumps(data, separators=(',', ':'))
+        self.danmuSocket.push(data)
+        self.danmuSocket.pull()
+
+        self.danmuSocket.sendall(b'\x02\x00\x00\x00')
+        self.danmuSocket.pull()
+
+        data = {
+            'channelId': roomInfo['roomId'],
+            'token': roomInfo['token'],
+            'userId': roomInfo['userId'], }
+        data = json.dumps(data, separators=(',', ':'))
+        data = '\x00\x02\x20' + 'connector.connectorHandler.login' + data
+        self.danmuSocket.push(data, b'\x04')
     def _create_thread_fn(self, roomInfo):
         def keep_alive(self):
-            self.danmuSocket.push(b'', 2)
             time.sleep(30)
+            self.danmuSocket.sendall(b'\x03\x00\x00\x00')
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.pull()
-            for msg in re.findall(b'\x00({[^\x00]*})', content):
+            for msg in re.findall(b'\x04\x00.*?({"[^\x04]*})', content):
                 try:
                     msg = json.loads(msg.decode('utf8', 'ignore'))
-                    msg['NickName'] = (msg.get('info', ['','',['', '']])[2][1]
-                        or msg.get('data', {}).get('uname', ''))
-                    msg['Content']  = msg.get('info', ['', ''])[1]
-                    msg['MsgType']  = {'SEND_GIFT': 'gift', 'DANMU_MSG': 'danmu',
-                        'WELCOME': 'enter'}.get(msg.get('cmd'), 'other')
+                    if 'msg_content' not in msg or 'msg_type' not in msg: continue
+                    msg['NickName'] = msg['msg_content']['username']
+                    msg['Content']  = msg['msg_content'].get('content') or \
+                        msg['msg_content'].get('amount')
+                    msg['MsgType']  = {'msg': 'danmu', 'beans': 'gift',
+                        'welcome': 'enter'}.get(msg.get('msg_type'), 'other')
                 except Exception as e:
                     pass
                 else:
                     self.danmuWaitTime = time.time() + self.maxNoDanMuWait
                     self.msgPipe.append(msg)
         return get_danmu, keep_alive # danmu, heart
-
-url = 'http://www.huomao.com/%s'
-roomId = '1745'
-
-c = requests.get(url % roomId).content
-r = re.search('getFlash\("(.*?)","(.*?)"\);', c)
-data = {
-    'cid': r.group(1),
-    'cdns': '1',
-    'streamtype': 'live',
-    'VideoIDS': r.group(2), }
-j = requests.post('http://www.huomao.com/swf/live_data', data=data).json()
-print(j['roomStatus'] == '1')
-
-roomId = '11619'
-
-url = 'http://chat.huomao.com/chat/getToken'
-params = {
-    'callback': 'jQuery171032695039477104815_1477741089191',
-    'cid': roomId,
-    '_': int(time.time() * 100), }
-headers = { 'User-Agent': 'User-Agent: Mozilla/5.0 (Windows NT 6.3; Win64; x64)'\
-    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.71 Safari/537.36', }
-c = requests.get(url, params=params, headers=headers).content
-r = re.search('jQuery[^(]*?\((.*?)\)$', c)
-if r:
-    j = json.loads(r.group(1))['data']
-    print(j)
-else:
-    raise Exception
-s = socket.socket()
-s.connect((j['host'], int(j['port'])))
-
-def push_data(data, t=b'\x01'):
-    data = t + pack('>I', len(data))[1:] + data
-    print(repr(data))
-    s.sendall(data)
-
-data = {
-    'user': None,
-    'sys': {
-        'version': '0.1.6b',
-        'pomelo_version': '0.7.x',
-        'type': 'pomelo-flash-tcp', }, }
-data = json.dumps(data, separators=(',', ':'))
-push_data(data)
-print(repr(s.recv(999)))
-
-s.sendall(b'\x02\x00\x00\x00')
-
-data = {
-    'channelId': roomId,
-    'log': True,
-    'userId': '', }
-data = '\x00\x01\x20gate.gateHandler.lookupConnector'\
-    + json.dumps(data, separators=(',', ':'))
-push_data(data, b'\x04')
-r = s.recv(999)[6:]
-print(r)
-newDes = json.loads(r)
-print(newDes)
-s = socket.socket()
-s.connect((newDes['host'], newDes['port']))
-
-def push_data(data, t=b'\x01'):
-    data = t + pack('>I', len(data))[1:] + data
-    print(repr(data))
-    s.sendall(data)
-
-data = {
-    'user': None,
-    'sys': {
-        'version': '0.1.6b',
-        'pomelo_version': '0.7.x',
-        'type': 'pomelo-flash-tcp', }, }
-data = json.dumps(data, separators=(',', ':'))
-push_data(data)
-print(repr(s.recv(999)))
-
-s.sendall(b'\x02\x00\x00\x00')
-s.recv(999)
-
-data = {
-    'channelId': roomId,
-    'token': j['token'],
-    'userId': j['uid'], }
-data = json.dumps(data, separators=(',', ':'))
-data = '\x00\x02\x20' + 'connector.connectorHandler.login' + data
-push_data(data, b'\x04')
-def heart_loop():
-    while 1:
-        time.sleep(30)
-        s.sendall(b'\x03\x00\x00\x00')
-t = threading.Thread(target=heart_loop)
-t.setDaemon(True)
-t.start()
-
-while 1:
-    r = s.recv(999)
-    j = re.search(b'({".*?}$)', r)
-    if j:
-        j = json.loads(j.group(1).decode('utf8', 'replace'))
-        if 'msg_content' not in j or 'msg_type' not in j: continue
-        if j['msg_type'] == 'msg':
-            print(j['msg_content'].get('content'))
-        elif j['msg_type'] == 'beans':
-            print(j['msg_content'].get('amount'))
-    else:
-        print(r)

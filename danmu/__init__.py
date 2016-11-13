@@ -7,16 +7,16 @@ from .QuanMin  import QuanMinDanMuClient
 from .Bilibili import BilibiliDanMuClient
 from .HuoMao   import HuoMaoDanMuClient
 
-__version__ = '1.0.3'
+__version__ = '1.0.4'
 __all__     = ['DanMuClient']
 
 class DanMuClient(object):
-    __url          = ''
-    __baseClient   = None
-    __client       = None
-    __functionDict = {'default': lambda x: 0}
-    __isRunning    = False
     def __init__(self, url):
+        self.__url          = ''
+        self.__baseClient   = None
+        self.__client       = None
+        self.__functionDict = {'default': lambda x: 0}
+        self.__isRunning    = False
         if 'http://' == url[:7]:
             self.__url = url
         else:

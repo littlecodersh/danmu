@@ -48,7 +48,7 @@ def danmu_fn(msg):
 
 @dmc.gift
 def gift_fn(msg):
-    pp('[%s] sent a gift!' % content['NickName'])
+    pp('[%s] sent a gift!' % msg['NickName'])
 
 @dmc.other
 def other_fn(msg):

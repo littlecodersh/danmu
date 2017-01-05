@@ -4,15 +4,17 @@ from struct import pack
 
 import requests
 
+from danmu.config import USER_AGENT
 from .Abstract import AbstractDanMuClient
 
 class ZhanQiDanMuClient(AbstractDanMuClient):
     def _get_live_status(self):
-        r = requests.get('http://www.zhanqi.tv/' +
-            self.url.split('/')[-1] or self.url.split('/')[-2])
-        if r.url == 'http://www.zhanqi.tv/': return False
-        rawJson = re.findall('oRoom = (.*);[\s\S]*?window.bClose', r.text)
-        if not rawJson: rawJson = re.findall('aVideos = (.*);[\s\S]*?oPageConfig.oUrl', r.text)
+        r = requests.get('https://www.zhanqi.tv/' +
+            self.url.split('/')[-1] or self.url.split('/')[-2], 
+            headers={'User-Agent': USER_AGENT})
+        if r.url == 'https://www.zhanqi.tv/': return False
+        rawJson = re.findall('oRoom = (.*);[\s\S]*?window.', r.text)
+        if not rawJson: rawJson = re.findall('aVideos = (.*);[\s\S]*?oPageConfig.', r.text)
         self.roomInfo = json.loads(rawJson[0])
         if isinstance(self.roomInfo, list): self.roomInfo = self.roomInfo[0]
         return self.roomInfo['status'] == '4'
@@ -20,7 +22,7 @@ class ZhanQiDanMuClient(AbstractDanMuClient):
         serverAddress = json.loads(base64.b64decode(
             self.roomInfo['flashvars']['Servers']).decode('ascii'))['list'][0]
         serverAddress = (serverAddress['ip'], serverAddress['port'])
-        url = '%s/api/public/room.viewer' % 'http://www.zhanqi.tv'
+        url = '%s/api/public/room.viewer' % 'https://www.zhanqi.tv'
         params = {
             'uid': self.roomInfo['uid'],
             '_t': int(time.time() / 60), }

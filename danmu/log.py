@@ -1,15 +1,41 @@
-import os, logging
+import logging
 
-if not os.path.exists('config'): os.mkdir('config')
-log = logging.getLogger('danmu')
-log.setLevel(logging.DEBUG)
-fileHandler = logging.FileHandler(os.path.join('config', 'run.log'), encoding = 'utf8')
-fileHandler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)-17s <%(message)s> %(levelname)s %(filename)s[%(lineno)d]',
-    datefmt='%Y%m%d %H:%M:%S')
-fileHandler.setFormatter(formatter)
-log.addHandler(fileHandler)
+class LogSystem(object):
+    handlerList = []
+    showOnCmd = True
+    loggingLevel = logging.INFO
+    loggingFile = None
+    def __init__(self):
+        self.cmdHandler = None
+        for handler in logging.getLogger().handlers:
+            if 'StreamHandler' in str(handler):
+                self.cmdHandler = handler
+        if self.cmdHandler is None:
+            self.cmdHandler = logging.StreamHandler()
+            logging.getLogger().addHandler(self.cmdHandler)
+        self.logger = logging.getLogger('danmu')
+        self.logger.addHandler(logging.NullHandler())
+        self.logger.setLevel(self.loggingLevel)
+        self.fileHandler = None
+    def set_logging(self, showOnCmd=True, loggingFile=None,
+            loggingLevel=logging.INFO):
+        if showOnCmd != self.showOnCmd:
+            if showOnCmd:
+                logging.getLogger().addHandler(self.cmdHandler)
+            else:
+                logging.getLogger().removeHandler(self.cmdHandler)
+            self.showOnCmd = showOnCmd
+        if loggingFile != self.loggingFile:
+            if self.loggingFile is not None: # clear old fileHandler
+                self.logger.removeHandler(self.fileHandler)
+                self.fileHandler.close()
+            if loggingFile is not None: # add new fileHandler
+                self.fileHandler = logging.FileHandler(loggingFile)
+                self.logger.addHandler(self.fileHandler)
+            self.loggingFile = loggingFile
+        if loggingLevel != self.loggingLevel:
+            self.logger.setLevel(loggingLevel)
+            self.loggingLevel = loggingLevel
 
-if __name__ == '__main__':
-    log.debug('This is debug')
-    log.info('This is info')
+ls = LogSystem()
+set_logging = ls.set_logging

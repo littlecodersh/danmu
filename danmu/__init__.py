@@ -6,8 +6,10 @@ from .ZhanQi   import ZhanQiDanMuClient
 from .QuanMin  import QuanMinDanMuClient
 from .Bilibili import BilibiliDanMuClient
 from .HuoMao   import HuoMaoDanMuClient
+from .log      import set_logging
+from .config   import VERSION
 
-__version__ = '1.0.4'
+__version__ = VERSION
 __all__     = ['DanMuClient']
 
 class DanMuClient(object):

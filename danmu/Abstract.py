@@ -1,4 +1,4 @@
-import abc, threading, time, logging
+import abc, threading, time, logging, traceback
 
 logger = logging.getLogger('danmu')
 
@@ -38,7 +38,7 @@ class AbstractDanMuClient(object):
                 self._wrap_thread(danmuThreadFn, heartThreadFn)
                 self._start_receive()
             except Exception as e:
-                logger.debug(str(e.args))
+                logger.debug(traceback.format_exc())
                 time.sleep(5)
             else:
                 break
@@ -48,7 +48,7 @@ class AbstractDanMuClient(object):
             try:
                 fn(*args, **kwargs)
             except Exception as e:
-                logger.debug(str(e.args))
+                logger.debug(traceback.format_exc())
                 if not self.live: return
                 self.live = False
                 # In case thread is blocked and can't stop, set a max wait time

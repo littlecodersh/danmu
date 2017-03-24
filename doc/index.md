@@ -1,7 +1,5 @@
 # danmu
 
-![py2][py2] ![py3][py3] [English Version][english_version]
-
 danmu 是一个开源的直播平台弹幕接口，使用他没什么基础的你也可以轻松的操作各平台弹幕。
 
 使用不到三十行代码，你就可以使用Python基于弹幕进一步开发。
@@ -48,7 +46,7 @@ def danmu_fn(msg):
 
 @dmc.gift
 def gift_fn(msg):
-    pp('[%s] sent a gift!' % content['NickName'])
+    pp('[%s] sent a gift!' % msg['NickName'])
 
 @dmc.other
 def other_fn(msg):

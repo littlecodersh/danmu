@@ -56,7 +56,7 @@ class ZhanQiDanMuClient(AbstractDanMuClient):
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return
             content = self.danmuSocket.recv(999)
-            for msg in re.findall(b'\x10\x27({[^\x00]*})\x0a', content):
+            for msg in re.findall(b'\x10\x27({[^\x00]*})[\x0a]?', content):
                 try:
                     msg = json.loads(msg.decode('utf8', 'ignore'))
                     msg['NickName'] = (msg.get('fromname', '') or

@@ -38,7 +38,7 @@ class DouYuDanMuClient(AbstractDanMuClient):
         self.danmuSocket.push('type@=joingroup/rid@=%s/gid@=-9999/'%roomInfo['room_id'])
     def _create_thread_fn(self, roomInfo):
         def keep_alive(self):
-            self.danmuSocket.push('type@=keeplive/tick@=%s/'%int(time.time()))
+            self.danmuSocket.push('type@=mrkl/')
             time.sleep(30)
         def get_danmu(self):
             if not select.select([self.danmuSocket], [], [], 1)[0]: return

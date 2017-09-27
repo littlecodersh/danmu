@@ -29,19 +29,10 @@ class PandaDanMuClient(AbstractDanMuClient):
         return j['videoinfo']['status'] == '2'
     def _prepare_env(self):
         roomId = self.url.split('/')[-1] or self.url.split('/')[-2]
-        url = 'http://www.panda.tv/ajax_chatroom?roomid=%s&_=%s'%(roomId, str(int(time.time())))
-        roomInfo = requests.get(url).json()
-        url = 'http://api.homer.panda.tv/chatroom/getinfo'
-        params = {
-            'rid': roomInfo['data']['rid'],
-            'roomid': roomId,
-            'retry': 0,
-            'sign': roomInfo['data']['sign'], 
-            'ts': roomInfo['data']['ts'],
-            '_': int(time.time()), }
-        serverInfo = requests.get(url, params).json()['data']
-        serverAddress = serverInfo['chat_addr_list'][0].split(':')
-        return (serverAddress[0], int(serverAddress[1])), serverInfo
+        url = 'http://www.panda.tv/ajax_chatinfo?roomid=%s&_=%s'%(roomId, str(int(time.time())))
+        roomInfo = requests.get(url).json()['data']
+        serverAddress = roomInfo['chat_addr_list'][0].split(':')
+        return (serverAddress[0], int(serverAddress[1])), roomInfo
     def _init_socket(self, danmu, roomInfo):
         data = [
             ('u', '%s@%s'%(roomInfo['rid'], roomInfo['appid'])),

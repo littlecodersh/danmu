@@ -29,14 +29,14 @@ class PandaDanMuClient(AbstractDanMuClient):
         return j['videoinfo']['status'] == '2'
     def _prepare_env(self):
         roomId = self.url.split('/')[-1] or self.url.split('/')[-2]
-        url = 'http://www.panda.tv/ajax_chatroom?roomid=%s&_=%s'%(roomId, str(int(time.time())))
+        url = 'https://riven.panda.tv/chatroom/getinfo?roomid=%s&app=1&protocol=ws&_caller=panda-pc_web&_=%s' %(roomId, str(int(time.time())))
         roomInfo = requests.get(url).json()
         url = 'http://api.homer.panda.tv/chatroom/getinfo'
         params = {
             'rid': roomInfo['data']['rid'],
             'roomid': roomId,
             'retry': 0,
-            'sign': roomInfo['data']['sign'], 
+            'sign': roomInfo['data']['sign'],
             'ts': roomInfo['data']['ts'],
             '_': int(time.time()), }
         serverInfo = requests.get(url, params).json()['data']

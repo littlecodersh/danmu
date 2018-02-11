@@ -18,7 +18,7 @@ class _socket(socket.socket):
 
 class BilibiliDanMuClient(AbstractDanMuClient):
     def _get_live_status(self):
-        url = ('http://live.bilibili.com/'
+        url = ('http://api.live.bilibili.com/'
             + self.url.split('/')[-1] or self.url.split('/')[-2])
         self.roomId = re.findall(b'var ROOMID = (\d+);', requests.get(url).content)[0].decode('ascii')
         r = requests.get('http://live.bilibili.com/api/player?id=cid:' + self.roomId)
